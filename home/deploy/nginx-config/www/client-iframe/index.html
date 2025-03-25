@@ -133,6 +133,7 @@
           const cleanNewUrl = newUrl.split("?")[0];
           const queryParams = new URLSearchParams(newUrl.split("?")[1] || "");
           queryParams.delete("clientside_routing");
+          queryParams.delete("client"); // 👈 voorkomt dat ?client=... terugkomt in de URL
 
           let transformedUrl = cleanNewUrl;
           if (toPath !== "/") transformedUrl = transformedUrl.replace(toPath, fromPath);
