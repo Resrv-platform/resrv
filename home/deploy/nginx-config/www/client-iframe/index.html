@@ -9,26 +9,7 @@
   <script>window.clientportal_debug = true;</script>
 
   <script>
-    async function loadMetaInfo() {
-      try {
-        const formData = new FormData();
-        formData.append("client_domain", window.location.hostname);
-
-        const res = await fetch("https://rms.resrv.nl/api/1.1/wf/get_domain", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await res.json();
-        if (window.clientportal_debug) console.log("[clientportal] Meta data:", data);
-
-        if (data.meta) applyMeta(data.meta);
-      } catch (error) {
-        console.error("[clientportal] API error:", error);
-      }
-    }
-
-    function applyMeta(meta) {
+  function applyMeta(meta) {
       if (meta.documentTitle) document.title = meta.documentTitle;
 
       updateMetaTag("description", meta.description);
@@ -70,7 +51,16 @@
         link.setAttribute("href", href);
       }
     }
+function applyMeta(meta = {}) {
+  const defaultTitle = "Resrv Systeem";
+  const defaultDescription = "Welkom in het reserveringssysteem van Resrv.";
+  const defaultFavicon = "https://rms.resrv.nl/favicon.ico";
 
+  document.title = meta.documentTitle || defaultTitle;
+  updateMetaTag("description", meta.description || defaultDescription);
+  injectMetaTags(meta.openGraphMetaTags || {}, "property");
+  injectLinkTags(meta.linkTypes || { icon: defaultFavicon });
+}
     window.addEventListener("DOMContentLoaded", () => {
       const iframe = document.getElementById("clientportal_iframe");
 
@@ -90,7 +80,7 @@
         console.log("[clientportal] iframe.src =", iframe.src);
       }
 
-      loadMetaInfo();
+        applyMeta(); // sets default title/description/favicon
     });
   </script>
 
