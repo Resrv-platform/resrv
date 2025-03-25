@@ -72,10 +72,26 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      const iframe = document.getElementById("clientportal_iframe");
-      iframe.src = "https://rms.resrv.nl/?client=" + window.location.hostname;
-      loadMetaInfo();
+  const iframe = document.getElementById("clientportal_iframe");
+
+  // Haal path en zoekparameters op
+  const path = window.location.pathname;
+  const search = window.location.search;
+
+  // Bouw de iframe URL
+  let iframeUrl = "https://rms.resrv.nl";
+  iframeUrl += `/${path === "/" ? "" : path.replace(/^\//, "")}`;
+  iframeUrl += `?client=${window.location.hostname}`;
+  if (search) {
+    const searchParams = new URLSearchParams(search);
+    searchParams.forEach((value, key) => {
+      iframeUrl += `&${key}=${encodeURIComponent(value)}`;
     });
+  }
+
+  iframe.src = iframeUrl;
+  loadMetaInfo();
+});
   </script>
 
   <script id="clientportal_router"
