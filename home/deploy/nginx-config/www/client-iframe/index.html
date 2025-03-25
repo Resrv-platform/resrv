@@ -1,78 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Client Portal</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Portal 2.0</title>
   <meta name="description" content="Your client portal powered by RESRV" />
   <link rel="icon" href="https://rms.resrv.nl/favicon.ico" />
   <script>window.clientportal_debug = true;</script>
 
-  <!-- Routing Script + Meta via API -->
   <script>
-    const formdata = new FormData();
-    formdata.append("client_domain", window.location.hostname); // auto detect domain
+    async function loadMetaInfo() {
+      try {
+        const formData = new FormData();
+        formData.append("client_domain", window.location.hostname);
 
-    const requestOptions = {
-      method: "POST",
-      body: formdata,
-      redirect: "follow"
-    };
+        const res = await fetch("https://rms.resrv.nl/api/1.1/wf/get_domain", {
+          method: "POST",
+          body: formData,
+        });
 
-    fetch("https://rms.resrv.nl/api/1.1/wf/get_domain", requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Received from Bubble:", data);
+        const data = await res.json();
+        if (window.clientportal_debug) console.log("[clientportal] Meta data:", data);
 
-        if (data.redirect_url) {
-          const iframe = document.getElementById("clientportal_iframe");
-          iframe.src = data.redirect_url + "&clientside_routing=true";
-
-          // Update meta info if present
-          if (data.meta) {
-            clientportalChangeMeta(data.meta);
-          }
-        }
-      })
-      .catch((error) => console.error("API error:", error));
-
-    function clientportalChangeMeta(meta) {
-      if (meta.documentTitle) document.title = meta.documentTitle;
-
-      if (meta.description) {
-        let desc = document.querySelector("meta[name='description']");
-        if (!desc) {
-          desc = document.createElement("meta");
-          desc.setAttribute("name", "description");
-          document.head.appendChild(desc);
-        }
-        desc.setAttribute("content", meta.description);
-      }
-
-      if (meta.openGraphMetaTags) {
-        for (const [property, content] of Object.entries(meta.openGraphMetaTags)) {
-          let tag = document.querySelector(`meta[property="${property}"]`);
-          if (!tag) {
-            tag = document.createElement("meta");
-            tag.setAttribute("property", property);
-            document.head.appendChild(tag);
-          }
-          tag.setAttribute("content", content);
-        }
-      }
-
-      if (meta.linkTypes) {
-        for (const [rel, href] of Object.entries(meta.linkTypes)) {
-          let link = document.querySelector(`link[rel="${rel}"]`);
-          if (!link) {
-            link = document.createElement("link");
-            link.setAttribute("rel", rel);
-            document.head.appendChild(link);
-          }
-          link.setAttribute("href", href);
-        }
+        if (data.meta) applyMeta(data.meta);
+      } catch (error) {
+        console.error("[clientportal] API error:", error);
       }
     }
+
+    function applyMeta(meta) {
+      if (meta.documentTitle) document.title = meta.documentTitle;
+
+      updateMetaTag("description", meta.description);
+      injectMetaTags(meta.openGraphMetaTags, "property");
+      injectLinkTags(meta.linkTypes);
+    }
+
+    function updateMetaTag(name, content) {
+      if (!content) return;
+      let tag = document.querySelector(`meta[name="${name}"]`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute("name", name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    }
+
+    function injectMetaTags(tags = {}, attr = "property") {
+      for (const [key, value] of Object.entries(tags)) {
+        let tag = document.querySelector(`meta[${attr}="${key}"]`);
+        if (!tag) {
+          tag = document.createElement("meta");
+          tag.setAttribute(attr, key);
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute("content", value);
+      }
+    }
+
+    function injectLinkTags(links = {}) {
+      for (const [rel, href] of Object.entries(links)) {
+        let link = document.querySelector(`link[rel="${rel}"]`);
+        if (!link) {
+          link = document.createElement("link");
+          link.setAttribute("rel", rel);
+          document.head.appendChild(link);
+        }
+        link.setAttribute("href", href);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const iframe = document.getElementById("clientportal_iframe");
+      iframe.src = "https://rms.resrv.nl/?client=" + window.location.hostname;
+      loadMetaInfo();
+    });
   </script>
 
   <script id="clientportal_router"
@@ -94,7 +97,7 @@
         if (data?.type === "clientportal:navigate") {
           const newPath = data.path;
           if (newPath !== lastUrl) {
-            const action = clientportalClientSideRouter(basePathTo, basePathFrom, newPath, lastUrl);
+            const action = handleClientRouting(basePathTo, basePathFrom, newPath, lastUrl);
             if (action.action === "replace") {
               history.replaceState({}, "", action.url);
               lastUrl = newPath;
@@ -104,11 +107,11 @@
         }
 
         if (data?.clientportal?.meta) {
-          clientportalChangeMeta(data.clientportal.meta);
+          applyMeta(data.clientportal.meta);
         }
       });
 
-      function clientportalClientSideRouter(toPath, fromPath, newUrl, oldUrl) {
+      function handleClientRouting(toPath, fromPath, newUrl, oldUrl) {
         try {
           const cleanNewUrl = newUrl.split("?")[0];
           const queryParams = new URLSearchParams(newUrl.split("?")[1] || "");
@@ -132,6 +135,7 @@
     })();
   </script>
 </head>
+
 <body>
   <iframe
     id="clientportal_iframe"
