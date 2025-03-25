@@ -72,27 +72,27 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-  const iframe = document.getElementById("clientportal_iframe");
+      const iframe = document.getElementById("clientportal_iframe");
 
-  const path = window.location.pathname;
-  const search = window.location.search;
+      const path = window.location.pathname;
+      const search = window.location.search;
 
-  // Bouw de iframe URL
-  let iframeUrl = "https://rms.resrv.nl" + path;
+      // Bouw de iframe URL
+      let iframeUrl = "https://rms.resrv.nl" + path;
 
-  // Voeg eventueel bestaande zoekparameters toe
-  const searchParams = new URLSearchParams(search);
-  searchParams.set("client", window.location.hostname); // Voeg client toe
+      // Voeg eventueel bestaande zoekparameters toe
+      const searchParams = new URLSearchParams(search);
+      searchParams.set("client", window.location.hostname); // Voeg client toe
 
-  // Stel iframe src in zonder window.location aan te passen
-  iframe.src = `${iframeUrl}?${searchParams.toString()}`;
+      // Stel iframe src in zonder window.location aan te passen
+      iframe.src = `${iframeUrl}?${searchParams.toString()}`;
 
-  loadMetaInfo(); // Houd je bestaande metadata-ophaal logica
-});
+      if (window.clientportal_debug) {
+        console.log("[clientportal] iframe.src =", iframe.src);
+      }
 
-  iframe.src = iframeUrl;
-  loadMetaInfo();
-});
+      loadMetaInfo();
+    });
   </script>
 
   <script id="clientportal_router"
