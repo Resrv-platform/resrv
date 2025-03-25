@@ -74,20 +74,21 @@
     window.addEventListener("DOMContentLoaded", () => {
   const iframe = document.getElementById("clientportal_iframe");
 
-  // Haal path en zoekparameters op
   const path = window.location.pathname;
   const search = window.location.search;
 
   // Bouw de iframe URL
-  let iframeUrl = "https://rms.resrv.nl";
-  iframeUrl += `/${path === "/" ? "" : path.replace(/^\//, "")}`;
-  iframeUrl += `?client=${window.location.hostname}`;
-  if (search) {
-    const searchParams = new URLSearchParams(search);
-    searchParams.forEach((value, key) => {
-      iframeUrl += `&${key}=${encodeURIComponent(value)}`;
-    });
-  }
+  let iframeUrl = "https://rms.resrv.nl" + path;
+
+  // Voeg eventueel bestaande zoekparameters toe
+  const searchParams = new URLSearchParams(search);
+  searchParams.set("client", window.location.hostname); // Voeg client toe
+
+  // Stel iframe src in zonder window.location aan te passen
+  iframe.src = `${iframeUrl}?${searchParams.toString()}`;
+
+  loadMetaInfo(); // Houd je bestaande metadata-ophaal logica
+});
 
   iframe.src = iframeUrl;
   loadMetaInfo();
